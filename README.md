@@ -1,5 +1,7 @@
 # Miftah
 
+🇯🇵 [日本語ガイド / Japanese guide](README.ja.md)
+
 ## Use the right account with the MCP servers you already trust
 
 You already have an MCP server for GitHub, Sentry, Google Search Console, or another service. Miftah helps when that same server needs to work across more than one account, client, project, or environment.
