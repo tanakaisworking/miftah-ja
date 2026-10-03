@@ -250,9 +250,11 @@ function parseYesNo(value: string | undefined, label: string): boolean {
   switch (value?.toLowerCase()) {
     case "y":
     case "yes":
+    case "はい":
       return true;
     case "n":
     case "no":
+    case "いいえ":
       return false;
     default:
       usageError(`Answer 'yes' or 'no' when asked to ${label}.`);
@@ -319,9 +321,11 @@ function parseAdditionalGoogleSearchConsoleAccount(value: string | undefined): b
   switch (value?.toLowerCase()) {
     case "y":
     case "yes":
+    case "はい":
       return true;
     case "n":
     case "no":
+    case "いいえ":
       return false;
     default:
       usageError("Answer 'yes' or 'no' when asked to add another Google Search Console account.");
@@ -330,6 +334,8 @@ function parseAdditionalGoogleSearchConsoleAccount(value: string | undefined): b
 
 /** Validates one explicit active-profile lifetime supplied by CLI input. */
 function parseActiveProfileLifetime(value: string | undefined): ActiveProfileLifetime {
+  if (value === "初期値" || value === "デフォルト") return "process";
+  if (value === "保持" || value === "最後を保持") return "workspace";
   if (value === "process" || value === "workspace") return value;
   usageError("Active profile lifetime must be 'process' or 'workspace'.");
 }
@@ -351,7 +357,7 @@ async function collectActiveProfileLifetime(
 ): Promise<ActiveProfileLifetime | undefined> {
   if (!createsMultipleProfiles(preset, presetOptions)) return options.activeProfileLifetime;
   if (options.activeProfileLifetime !== undefined) return parseActiveProfileLifetime(options.activeProfileLifetime);
-  output.write(
+  output.write(\n    "アカウント切替の保持方法: process=再接続時にデフォルトへ戻す / workspace=最後に選んだProfileを保持します。\\n"\n  );\n  output.write(
     "Choose how live account switches behave after the MCP client reconnects: 'process' resets to the configured default; 'workspace' restores the last switch for this configuration.\n"
   );
   return parseActiveProfileLifetime(await prompt(
