@@ -28,12 +28,18 @@ GitHub presetはDockerを利用します。Google Search Console presetではPyt
 
 ## セットアップ
 
-upstreamのnpmパッケージを使う場合:
+### 日本語版forkを使う
 
 ```bash
-npm install -g @lubab/miftah@1.1.6
+git clone https://github.com/tanakaisworking/miftah-ja.git
+cd miftah-ja
+npm ci
+npm run build
+npm install -g .
 miftah setup
 ```
+
+日本語補助が不要でupstreamの安定版をそのまま使う場合は `npm install -g @lubab/miftah@1.1.6` で導入できます。
 
 このforkでは `miftah setup` の主要導線に日本語ガイドを追加し、以下の日本語入力も受け付けます。
 
