@@ -149,6 +149,8 @@ function parseGuidedSetupStartingPoint(answer: string): GuidedSetupStartingPoint
   if (
     answer === "1" ||
     answer === "connector" ||
+    answer === "コネクタ" ||
+    answer === "既知のコネクタ" ||
     answer === "new" ||
     answer === "n" ||
     answer === "preset" ||
@@ -160,6 +162,8 @@ function parseGuidedSetupStartingPoint(answer: string): GuidedSetupStartingPoint
   if (
     answer === "2" ||
     answer === "remote" ||
+    answer === "リモート" ||
+    answer === "リモートhttps" ||
     answer === "remote-https" ||
     answer === "remote https" ||
     answer === "https" ||
@@ -171,6 +175,8 @@ function parseGuidedSetupStartingPoint(answer: string): GuidedSetupStartingPoint
   if (
     answer === "3" ||
     answer === "local" ||
+    answer === "ローカル" ||
+    answer === "ローカル実行ファイル" ||
     answer === "local executable" ||
     answer === "executable" ||
     answer === "command"
@@ -180,6 +186,8 @@ function parseGuidedSetupStartingPoint(answer: string): GuidedSetupStartingPoint
   if (
     answer === "4" ||
     answer === "browser-sign-in" ||
+    answer === "ブラウザログイン" ||
+    answer === "ブラウザでログイン" ||
     answer === "browser sign in" ||
     answer === "remote-sign-in" ||
     answer === "remote sign in" ||
@@ -189,15 +197,30 @@ function parseGuidedSetupStartingPoint(answer: string): GuidedSetupStartingPoint
   ) {
     return "remote-sign-in";
   }
-  if (answer === "5" || answer === "import" || answer === "i" || answer === "existing client entry") return "import";
+  if (
+    answer === "5" ||
+    answer === "import" ||
+    answer === "i" ||
+    answer === "existing client entry" ||
+    answer === "取り込み" ||
+    answer === "既存設定"
+  ) return "import";
   return undefined;
 }
 
 function isGuidedSetupCancellation(answer: string): boolean {
-  return answer === "cancel" || answer === "quit" || answer === "q";
+  return answer === "cancel" || answer === "quit" || answer === "q" || answer === "中止" || answer === "終了";
 }
 
 function writeGuidedSetupStartingPointMenu(context: InitCommandContext): void {
+  context.output.write("\nMiftah セットアップ（日本語ガイド）\n");
+  context.output.write("ステップ1 — 接続方法を選んでください。番号入力がおすすめです。\n");
+  context.output.write("  1. 既知のコネクタ / 固定バージョンのパッケージ\n");
+  context.output.write("  2. リモートHTTPS MCP\n");
+  context.output.write("  3. ローカル実行ファイル（stdio MCP）\n");
+  context.output.write("  4. ブラウザログインを使うリモートMCP\n");
+  context.output.write("  5. 既存AIクライアントのMCP設定を取り込む\n");
+  context.output.write("中止: cancel / 中止\n");
   context.output.write("\nMiftah setup\n");
   context.output.write("Step 1 — Choose what you already have\n");
   for (const [index, startingPoint] of GUIDED_SETUP_STARTING_POINTS.entries()) {
@@ -215,6 +238,8 @@ async function confirmGuidedSetupStartingPoint(
   context: InitCommandContext,
   startingPoint: GuidedSetupStartingPoint
 ): Promise<"continue" | "back"> {
+  context.output.write("\nステップ2 — 選択内容を確認します\n");
+  context.output.write("続行: yes / はい、戻る: back / 戻る、中止: cancel / 中止\n");
   context.output.write("\nStep 2 — Confirm the setup path\n");
   context.output.write(`Selected: ${guidedSetupStartingPointLabel(startingPoint)}\n`);
   while (true) {
@@ -222,8 +247,8 @@ async function confirmGuidedSetupStartingPoint(
       "Continue with this setup path? (yes/back/cancel)",
       "yes"
     ))?.toLowerCase() ?? "yes";
-    if (answer === "yes" || answer === "y") return "continue";
-    if (answer === "back" || answer === "b") return "back";
+    if (answer === "yes" || answer === "y" || answer === "はい") return "continue";
+    if (answer === "back" || answer === "b" || answer === "戻る") return "back";
     if (isGuidedSetupCancellation(answer)) throw new CliUsageError("Guided setup was cancelled.");
     context.output.write("Choose 'yes' to continue, 'back' to change the starting point, or 'cancel' to exit.\n");
   }
@@ -246,6 +271,7 @@ async function chooseGuidedSetupStartingPoint(context: InitCommandContext): Prom
       if (await confirmGuidedSetupStartingPoint(prompts, context, startingPoint) === "continue") {
         return startingPoint;
       }
+      context.output.write("前の選択に戻ります。接続情報はまだ保存されていません。\n");
       context.output.write("Returning to the starting-point choices. No connection details were saved.\n");
     }
   } finally {
