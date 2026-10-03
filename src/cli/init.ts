@@ -357,7 +357,10 @@ async function collectActiveProfileLifetime(
 ): Promise<ActiveProfileLifetime | undefined> {
   if (!createsMultipleProfiles(preset, presetOptions)) return options.activeProfileLifetime;
   if (options.activeProfileLifetime !== undefined) return parseActiveProfileLifetime(options.activeProfileLifetime);
-  output.write(\n    "アカウント切替の保持方法: process=再接続時にデフォルトへ戻す / workspace=最後に選んだProfileを保持します。\\n"\n  );\n  output.write(
+  output.write(
+    "アカウント切替の保持方法: process=再接続時にデフォルトへ戻す / workspace=最後に選んだProfileを保持します。\n"
+  );
+  output.write(
     "Choose how live account switches behave after the MCP client reconnects: 'process' resets to the configured default; 'workspace' restores the last switch for this configuration.\n"
   );
   return parseActiveProfileLifetime(await prompt(
