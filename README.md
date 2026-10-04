@@ -1,183 +1,86 @@
-# Miftah
+# Miftah 日本語ガイド
 
-🇯🇵 [日本語ガイド / Japanese guide](README.ja.md)
+> このリポジトリは [mohanagy/miftah](https://github.com/mohanagy/miftah) の日本向けフォークです。
+>
+> **日本語だけでセットアップから利用まで進められること**を目的にしています。英語のupstream READMEは [README.en.md](README.en.md) に残しています。
+> 認証・ルーティング・セキュリティのコア設計はなるべく変更せず、セットアップ時の日本語補助を中心にしています。
 
-## Use the right account with the MCP servers you already trust
+## Miftahとは
 
-You already have an MCP server for GitHub, Sentry, Google Search Console, or another service. Miftah helps when that same server needs to work across more than one account, client, project, or environment.
+Miftahは、同じMCPサーバーを仕事用・個人用・顧客用など複数アカウントで使い分けるためのローカルMCP credential brokerです。
 
-Miftah runs locally in front of the upstream MCP server. You configure one Miftah connector for a service, give its accounts names such as `work`, `personal`, or `production`, and select the profile you intend to use.
+たとえばGitHubを `work` と `personal` の2アカウントで使う場合、Claude CodeやCursor側に同じMCPを複数登録する代わりに、Miftah側でProfileとして管理できます。
 
-```text
-Claude, Cursor, or VS Code
-            │
-    one Miftah connector
-            │
-       ┌────┴────┐
-     work     personal
-       │          │
-       same upstream MCP
-```
+- ローカル動作 / クラウドサービス不要
+- 複数アカウントをProfileとして管理
+- CredentialをAIクライアント設定から分離
+- Claude Desktop / Claude Code / Cursor / VS Code向け設定生成
+- Codex CLIとの互換性もupstreamで検証済み
 
-Miftah itself has no cloud service or telemetry. It adds local profile selection, credential references, policy, approvals, redaction, diagnostics, and optional audit metadata around an upstream; it does not replace that upstream or widen what the upstream supports.
+## 必要環境
 
-> **Status:** Miftah 1.0 is the stable v1 release line. Documented public compatibility surfaces follow Semantic Versioning. The external workflow and security-review gates were closed by maintainer attestation in [#39](https://github.com/mohanagy/miftah/issues/39); the source participant records and completed security report are not published in this repository.
-
-Upgrading from Miftah 0.5? See [What is in 0.5 and how to use it](docs/whats-new-in-0.5.md) for the guided setup, profile-management, Console, OAuth, and upgrade paths introduced before the stable line.
-
-## Is Miftah for you?
-
-Use Miftah when:
-
-- the same MCP service needs separate work, personal, client, or environment accounts;
-- you want the account choice to be visible and deliberate;
-- credentials should stay out of MCP client configuration;
-- local policy, approvals, redacted diagnostics, or audit metadata would help.
-
-Keep your direct MCP entry when you use one account and do not need those controls. Miftah is a wrapper, not a universal compatibility layer: the upstream server still owns its provider tools, runtime requirements, and provider-specific behavior.
-
-## One connector, named profiles
-
-Without Miftah, two GitHub accounts often become two almost-identical client entries such as `github-work` and `github-personal`. With Miftah, the client has one `github` connector and the accounts live behind it as named profiles.
-
-| Duplicate client entries | One Miftah connector |
-| --- | --- |
-| Copy launch settings for every account | Keep launch settings in one reviewed configuration |
-| Put account wiring in the client file | Keep profile-scoped credential references outside the client |
-| Choose an account by choosing a server entry | List, inspect, and deliberately switch named profiles |
-
-Miftah exposes management tools such as `miftah_list_profiles`, `miftah_current_profile`, and `miftah_use_profile`. Advanced connection-scoped profile locking uses `miftah_lock_profile` and `miftah_unlock_profile` only when explicitly enabled. The upstream's tools keep their original names.
-
-## Quick start
-
-Install Miftah, then choose the terminal wizard or the browser Console. Both use the same validated setup services. The terminal wizard can start from a known connector, remote HTTPS MCP, reviewed local executable, supported browser sign-in, or one existing client entry. The browser Console provides first-run setup for a known connector or a standards-compatible remote MCP with native OAuth.
-
-### 1. Install the current release
+Miftah本体は Node.js 20以上が必要です。
 
 ```bash
-npm install -g @lubab/miftah@1.1.6
-miftah version
+node --version
+npm --version
 ```
 
-### 2. Choose a human-first setup
+GitHub presetはDockerを利用します。Google Search Console presetではPython/uvxなど追加要件があります。
 
-**Terminal wizard**
+## セットアップ
+
+### 日本語版forkを使う
 
 ```bash
+git clone https://github.com/tanakaisworking/miftah-ja.git
+cd miftah-ja
+npm ci
+npm run build
+npm install -g .
 miftah setup
 ```
 
-The wizard shows numbered choices, lets you go back before entering connection details, validates before writing, and can print client JSON for manual review.
+日本語補助が不要でupstreamの安定版をそのまま使う場合は `npm install -g @lubab/miftah@1.1.6` で導入できます。
 
-**Browser Console**
+このforkでは `miftah setup` の主要導線に日本語ガイドを追加し、以下の日本語入力も受け付けます。
 
-```bash
-miftah dashboard
-```
+- `はい` / `いいえ`
+- `戻る` / `中止` / `終了`
+- `コネクタ` / `リモート` / `ローカル` / `ブラウザログイン` / `取り込み`
+- Profile保持方法として `初期値` / `デフォルト` / `保持` / `最後を保持`
 
-Keep the foreground terminal open, enter its one-time code in the local browser page, then choose **Set up an MCP**. `miftah dashboard` is the browser UI; the similarly named `miftah console` command starts the lower-level local control API.
+英語入力と英語表示は残しているため、upstreamのドキュメントとの対応関係も維持しています。
 
-Neither path asks for a token, password, or browser cookie. Miftah does not silently edit Claude Desktop, Claude Code, Cursor, or VS Code settings.
+## process と workspace
 
-Follow the generated handoff to review one client connector, merge it into your client settings, and restart or reconnect that client.
+- `process`: Miftah再起動時に設定済みのデフォルトProfileへ戻る
+- `workspace`: 最後に選んだProfileをこの設定用に保持する
 
-### Optional: scripted GitHub example
+## macOSでの注意
 
-Use `miftah init` when you want a repeatable preset command instead of either human-first flow. This example creates one Claude Desktop connector with `work` and `personal` GitHub profiles. It requires Docker.
+Claude DesktopなどGUIアプリは、ターミナルの `.zshrc` の環境変数をそのまま引き継がない場合があります。CredentialはOS Keychainや1Passwordなど、MiftahがサポートするSecret Providerの利用を推奨します。
 
-```bash
-miftah init github --preset github --active-profile-lifetime workspace --output ~/.config/miftah/github.json --client claude-desktop
-```
+## OAuthについて
 
-Miftah creates `~/.config/miftah/github.json` and prints a Claude Desktop `mcpServers` snippet. It does not edit Claude Desktop and does not ask for or write a token.
+MiftahがネイティブにOAuthを管理できるのは、標準仕様に沿ったRemote HTTP MCPです。stdio MCPや独自OAuthでは、接続先MCP側の認証手順が必要な場合があります。
 
-`--active-profile-lifetime workspace` makes a successful live profile switch durable for this configuration, so a fresh Miftah process restores it. Choose `process` instead when every fresh process should return to the configured default profile. The terminal wizard and Console present this choice during multi-profile setup. Existing configurations without `state` keep temporary `process` behavior; `miftah_current_profile`, `miftah_use_profile`, and `miftah_reset_profile` report the effective scope and restart consequence.
+## 詳細
 
-The generated profiles refer to `GITHUB_WORK_TOKEN` and `GITHUB_PERSONAL_TOKEN`. Provide least-privilege tokens through a supported [secret provider](docs/config.md#secret-providers), not as raw values in the Miftah or Claude JSON. OS keychain references use `secretref:keychain://`; 1Password references use `secretref:op://`. Claude Desktop is a GUI app and does not normally inherit variables from terminal startup files such as `~/.zshrc`.
+- [日本語セットアップ早見表](docs/SETUP_JA.md)
+- [upstream README](https://github.com/mohanagy/miftah)
 
-#### Validate before connecting the client
+## 日本語ドキュメント
 
-After those credential references are available to the process that will launch Miftah, run:
+- [セットアップ早見表](docs/SETUP_JA.md)
+- [日本語ドキュメント一覧](docs/README.md)
 
-```bash
-miftah validate --config ~/.config/miftah/github.json
-miftah doctor --config ~/.config/miftah/github.json
-miftah test-profile --config ~/.config/miftah/github.json --profile work
-```
+高度な内部仕様・セキュリティ設計はupstream由来の英語資料も残していますが、通常利用は日本語ドキュメントだけで進められる構成を目指しています。
 
-`validate` checks configuration shape. `doctor` checks redacted credential and upstream readiness. `test-profile` starts and initializes only the selected profile. None proves provider scopes or account identity beyond the evidence it actually reports.
+## upstreamとの関係
 
-#### Connect and select the account
-
-Merge the printed `mcpServers` entry into Claude Desktop through **Developer → Edit Config**, save, and restart Claude Desktop. Then ask:
-
-```text
-List the profiles available through `github`.
-Switch `github` to the personal profile.
-Confirm the current profile before reading my repositories.
-```
-
-The generated GitHub policy requires confirmation for a profile switch. See the complete [GitHub walkthrough](docs/examples/github.md) and [Claude Desktop setup](docs/claude-desktop.md) for credential and client details.
-
-If readiness fails, rerun the exact diagnostic command for this file:
-
-```bash
-miftah doctor --config ~/.config/miftah/github.json
-```
-
-Then use [Troubleshooting](docs/cli.md#troubleshooting).
-
-## Choose your setup and authentication path
-
-Start from what the upstream MCP server already uses:
-
-| What you have | Start here | Who owns authentication |
-| --- | --- | --- |
-| API key, token, or another secret | Run `miftah setup`, or use a reviewed preset from [Preset and client compatibility](docs/presets-and-clients.md). Store only a [secret reference](docs/config.md#secret-providers). | The upstream/provider owns the credential; Miftah resolves the configured reference for one profile. |
-| Standards-compatible remote HTTPS MCP with OAuth | Use `miftah setup --native-oauth` and [OAuth support](docs/oauth-support.md). | Miftah owns only its supported discovered browser flow, OS-vault credential, refresh, reauth, and local disconnect. |
-| Local or provider-specific MCP that opens its own login | Use the upstream or a reviewed adapter such as [Google Search Console](docs/provider-adapters.md#google-search-console-pilot). | The upstream owns browser login, token cache, refresh, reauth, and revocation. Miftah does not scrape that cache. |
-| One existing MCP client entry | Run the guided `miftah setup` import path. | Miftah imports only a supported non-secret launch shape; it does not infer OAuth ownership or modify the source client file. |
-| Reviewed local executable or exact-pinned package/container | Use `local-stdio`, `generic-npx`, or `generic-docker` from [Setup paths](docs/presets-and-clients.md). | The upstream owns authentication; Miftah launches with literal argument arrays and no shell. |
-
-Native OAuth is intentionally narrow and is not promised for every remote MCP or provider. A successful login, resolvable secret, or profile label is not proof that the credential has the intended scopes or belongs to the intended account. Use a configured identity probe when the upstream offers stable bounded identity evidence.
-
-On Windows, `generic`, `sentry`, and `generic-npx` are unavailable. Miftah refuses them instead of invoking `cmd.exe`. Use a reviewed direct `.exe` or `.com` executable, a direct-executable adapter such as Docker or `uvx.exe`, or a remote MCP. The compatibility matrix records the exact platform limits.
-
-## Wizard, CLI, clients, and optional Console
-
-- `miftah setup` is the guided terminal wizard. It asks what you already have, collects only the metadata needed for that path, validates before writing, and never asks for a token, password, or browser cookie.
-- `miftah init` is the optional scripted preset path shown in the quick start.
-- `miftah dashboard` opens the optional foreground-only local Console for reviewed setup, profiles, health, and OAuth lifecycle work. It is not required to run Miftah.
-- Client generation can print reviewable snippets for Claude Desktop, Claude Code, Cursor, and VS Code. Miftah never silently edits their settings.
-- Runtime protocol claims are narrower than snippet support; see the [tested MCP protocol and client matrix](docs/mcp-compatibility.md) for exact eras, transports, versions, and limitations.
-
-See [Setup paths](docs/presets-and-clients.md) for exact presets, client destinations, generated JSON shapes, upstream requirements, and platform support. See the [Console guide](docs/console-api.md) for its local authenticated control boundary.
-
-## Safety boundaries
-
-- Keep raw secrets, OAuth credentials, provider caches, dotenv files, active-profile state, audit journals, and generated machine-local client JSON out of shared configuration. Reviewed profile names, policy, routing, upstream metadata, and secret references may be shared only when no plaintext secret is present.
-- Local policy can allow, deny, or require confirmation, but it cannot reduce permissions already granted to a provider credential.
-- Identity verification is optional and upstream-specific. Credential readiness, token health, and verified account identity are different claims.
-- Audit records are redacted local metadata. Optional hash chaining provides local tamper evidence, not a remotely anchored immutable trail.
-- Remote OAuth, local/provider-owned OAuth, and static secret references have different owners and lifecycle behavior; choose the matching setup path above.
-
-Read the [Security boundary](docs/security.md) and [threat model](docs/threat-model.md) before deploying Miftah in a sensitive environment.
-
-## Go deeper
-
-- [Setup paths](docs/presets-and-clients.md) — presets, supported clients, pins, platform limits, and generated snippets
-- [Configuration reference](docs/config.md) — profiles, secrets, routing, policy, identity, and audit configuration
-- [OAuth guide](docs/oauth-support.md) — native remote OAuth and upstream-owned OAuth
-- [CLI reference](docs/cli.md) — commands, diagnostics, exit codes, logs, and [Troubleshooting](docs/cli.md#troubleshooting)
-- [Console guide](docs/console-api.md) — optional local dashboard and API
-- [v1 external evaluation](docs/v1-evaluation.md) — privacy-safe workflows, unaided first-use checks, and returning-user evidence
-- [independent security review brief](docs/independent-security-review.md) — review scope, deliverables, disclosure, and closure gates
-- [Security boundary](docs/security.md), [Threat model](docs/threat-model.md), [OAuth and Console security design](docs/oauth-console-threat-model.md), and [Architecture](docs/architecture.md)
-- [profile credential isolation](docs/config.md#profile-credential-isolation), [routing context](docs/config.md#routing-context), and [provider routing matchers](docs/config.md#provider-routing-matchers)
-- [Provider adapters](docs/provider-adapters.md), [plugins](docs/plugins.md), and [library API](docs/library-api.md)
-
-For bugs and feature requests, open an [issue](https://github.com/mohanagy/miftah/issues). Report vulnerabilities through the private process in [SECURITY.md](SECURITY.md).
+このforkはMiftah公式プロジェクトではありません。元プロジェクトは [mohanagy/miftah](https://github.com/mohanagy/miftah) です。
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+MIT License。元リポジトリの著作権表示とLICENSEを保持しています。
